@@ -33,6 +33,12 @@ func serveCommand() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "serve",
 		Short: "Serve traQ API",
+		PreRunE: func(_ *cobra.Command, _ []string) error {
+			if os.Getenv("NS_MARIADB_HOSTNAME") != "" && len(c.InitialAdminPassword) < 10 {
+				return fmt.Errorf("set TRAQ_INITIALADMINPASSWORD to at least 10 characters for NeoShowcase")
+			}
+			return nil
+		},
 		Run: func(_ *cobra.Command, _ []string) {
 			// Logger
 			logger, gormLogger := getLogger()
@@ -133,7 +139,7 @@ func serveCommand() *cobra.Command {
 				}
 				u, err := repo.CreateUser(context.Background(), repository.CreateUserArgs{
 					Name:       "traq",
-					Password:   "traq",
+					Password:   c.InitialAdminPassword,
 					Role:       role.Admin,
 					IconFileID: fid,
 				})

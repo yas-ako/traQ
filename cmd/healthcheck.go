@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -17,7 +18,8 @@ func healthcheckCommand() *cobra.Command {
 			logger, _ := getCLILoggers()
 			defer logger.Sync()
 
-			resp, err := http.DefaultClient.Get(fmt.Sprintf("http://localhost:%d/api/ping", c.Port))
+			client := &http.Client{Timeout: 5 * time.Second}
+			resp, err := client.Get(fmt.Sprintf("http://localhost:%d/api/ping", c.Port))
 			if err != nil {
 				logger.Fatal("HTTP Client Error", zap.Error(err))
 			}

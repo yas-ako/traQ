@@ -1,0 +1,52 @@
+name: traq-thread-prototype
+services:
+  backend:
+    build: .
+    command: ["serve", "--skip-init-emojis"]
+    mem_limit: 150m
+    memswap_limit: 150m
+    environment:
+      TRAQ_ORIGIN: http://localhost:3005
+      TRAQ_DEV: "false"
+      TRAQ_PPROF: "false"
+      TRAQ_ALLOWSIGNUP: "false"
+      TRAQ_INITIALADMINPASSWORD: ${TRAQ_INITIALADMINPASSWORD:?Source .envrc first}
+      NS_MARIADB_HOSTNAME: mysql
+      NS_MARIADB_PORT: "3306"
+      NS_MARIADB_USER: traq
+      NS_MARIADB_PASSWORD: ${PROTOTYPE_DB_PASSWORD:?Source .envrc first}
+      NS_MARIADB_DATABASE: traq
+      TRAQ_MARIADB_CONNECTION_MAXOPEN: "5"
+      TRAQ_ES_URL: ""
+      TRAQ_STORAGE_TYPE: s3
+      TRAQ_STORAGE_S3_BUCKET: ${TRAQ_STORAGE_S3_BUCKET:?}
+      TRAQ_STORAGE_S3_REGION: ${TRAQ_STORAGE_S3_REGION:?}
+      TRAQ_STORAGE_S3_ENDPOINT: ${TRAQ_STORAGE_S3_ENDPOINT:?}
+      TRAQ_STORAGE_S3_ACCESSKEY: ${TRAQ_STORAGE_S3_ACCESSKEY:?}
+      TRAQ_STORAGE_S3_SECRETKEY: ${TRAQ_STORAGE_S3_SECRETKEY:?}
+      TRAQ_STORAGE_S3_FORCEPATHSTYLE: "true"
+      TRAQ_STORAGE_S3_CACHEDIR: /app/storage
+      GOMEMLIMIT: 110MiB
+      GOMAXPROCS: "2"
+    ports:
+      - "127.0.0.1:3005:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+  mysql:
+    image: mariadb:10.11.19@sha256:7db29378d4fdab73f8123bbc2b48905c90d1a4b00cf848b028f1e81e623257f2
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_DATABASE: traq
+      MARIADB_USER: traq
+      MARIADB_PASSWORD: ${PROTOTYPE_DB_PASSWORD:?Source .envrc first}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci"]
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+volumes:
+  mysql:

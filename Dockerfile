@@ -30,6 +30,6 @@ VOLUME /app/storage
 
 COPY --from=build /traQ ./
 
-HEALTHCHECK CMD ["./traQ", "healthcheck", "||", "exit", "1"]
+HEALTHCHECK --timeout=10s CMD ["./traQ", "healthcheck"]
 ENTRYPOINT ["./traQ"]
 CMD ["serve"]

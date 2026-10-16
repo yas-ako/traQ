@@ -14,9 +14,84 @@ Docker is highly recommended for production usage.
 traQ uses `/app/config.yml` (by default) for configuring the backend application.
 
 Config value precedence:
-1. Values in `config.yml`
-2. Environment variable prefixed by `TRAQ_` (e.g. `TRAQ_ORIGIN`)
-3. Default values
+1. Environment variable prefixed by `TRAQ_` (e.g. `TRAQ_ORIGIN`)
+2. NeoShowcase's `NS_MARIADB_*` variables (database settings only)
+3. Values in `config.yml`
+4. Default values
+
+## Thread prototype on NeoShowcase
+
+Build the repository's `Dockerfile`, enable MariaDB for the app, expose port
+`3000`, and set the command arguments to `serve --skip-init-emojis`
+(the image entrypoint is already `./traQ`). This is the API backend only;
+the frontend must route `/api` and WebSocket connections to it.
+
+The server accepts the database variables injected by NeoShowcase:
+`NS_MARIADB_HOSTNAME`, `NS_MARIADB_PORT`, `NS_MARIADB_USER`,
+`NS_MARIADB_PASSWORD`, and `NS_MARIADB_DATABASE`. Explicit `TRAQ_MARIADB_*`
+variables override them; do not copy local database settings into the app.
+
+Set the following runtime environment variables in NeoShowcase:
+
+| Variable | Value |
+| --- | --- |
+| `TRAQ_ORIGIN` | The actual public HTTPS origin used by clients |
+| `TRAQ_DEV`, `TRAQ_PPROF`, `TRAQ_ALLOWSIGNUP` | `false` |
+| `TRAQ_INITIALADMINPASSWORD` | A random password, at least 10 characters |
+| `TRAQ_MARIADB_CONNECTION_MAXOPEN` | `5` |
+| `TRAQ_ES_URL` | Empty (search disabled) |
+| `TRAQ_STORAGE_TYPE` | `s3` |
+| `TRAQ_STORAGE_S3_ENDPOINT` | Your S3 API endpoint, not its web console |
+| `TRAQ_STORAGE_S3_REGION` | Your bucket's signing region |
+| `TRAQ_STORAGE_S3_BUCKET` | Your dedicated prototype bucket |
+| `TRAQ_STORAGE_S3_ACCESSKEY`, `TRAQ_STORAGE_S3_SECRETKEY` | Bucket credentials |
+| `TRAQ_STORAGE_S3_FORCEPATHSTYLE` | `true` for path-style storage |
+| `TRAQ_STORAGE_S3_CACHEDIR` | `/app/storage` |
+| `GOMEMLIMIT`, `GOMAXPROCS` | `110MiB`, `2` |
+
+Use `s3`, not `composite`: icons and thumbnails must also survive container
+replacement. `/app/storage` is only a disposable cache. `GOMEMLIMIT` is a Go
+runtime target, not a hard limit; test actual uploads under the platform limit.
+
+On an empty database, `serve` applies the schema (including thread migration
+`44`) and creates the `traq` administrator with `TRAQ_INITIALADMINPASSWORD`.
+This variable does not change passwords in an existing database. On NeoShowcase,
+startup rejects a missing/short bootstrap password before connecting to the DB.
+Outside NeoShowcase the historical default `traq` is retained for development;
+always set a random password for a reachable deployment.
+
+Do not run `migrate` before the first `serve`: initialization of users and roles
+is tied to creation of the schema. Do not use `migrate --reset` on retained data.
+If first-start initialization fails after creating the schema, inspect the
+database before retrying; schema creation does not make bootstrap resumable.
+Migration names are intentionally unchanged in this prototype.
+
+For a local equivalent, copy `.envrc.example` to the ignored `.envrc`, fill in
+the credentials, restrict its permissions (`chmod 600 .envrc`), and run
+`mise run prototype-up`. It starts only MariaDB and the API on
+`http://localhost:3005`, with a 150 MiB API memory limit and no extra swap.
+The database has no host port. `mise run prototype-down` retains the database;
+do not add `--volumes`. traQ does not read `.envrc` itself; the mise tasks source
+it and Compose passes selected variables to the container. Never put secrets
+in a Docker build argument or frontend `VITE_*` variable.
+
+Check `/api/ping`, log in as `traq` with the configured password, and verify
+that `traq` as a password fails. Create ordinary demo users through
+`POST /api/v3/users` while authenticated as the administrator. Free signup stays
+disabled. Verify posting, image upload, icons, thumbnails and reads after
+container replacement before opening the deployment to its intended users.
+
+The local smoke test is `source .envrc && node dev/bin/prototype-smoke.mjs`
+(Node.js 22 or later). Set the four `PROTOTYPE_DEMO0N_PASSWORD` variables first.
+It creates `demo01` through `demo04` if absent, checks their permissions, and
+retains one test post/image. It does not reset existing user passwords. A repeat
+run replaces only its previously recorded test post/image. After recreating the
+backend with `--renew-anon-volumes`, run it with `--verify` to check retained
+data without uploading again. Its IDs are stored in ignored
+`dev/data/prototype-smoke.json`. Do not use this local-only script against a
+shared or production database.
+
+## General configuration
 
 Here are some tips for configuring traQ:
 - If you want a public instance, set `allowSignUp` to `true`.

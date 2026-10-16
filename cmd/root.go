@@ -55,6 +55,7 @@ func init() {
 		viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 		viper.SetEnvPrefix("TRAQ")
 		viper.AutomaticEnv()
+		bindDeploymentEnv(viper.GetViper())
 		if err := viper.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 				log.Fatalf("failed to read config file: %v", err)

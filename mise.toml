@@ -96,3 +96,11 @@ run = "docker compose run --rm --entrypoint ./traQ backend seed"
 [tasks.gogen]
 description = "Generate auto-generated go files"
 run = "go generate ./..."
+
+[tasks.prototype-up]
+description = "Start the prototype API with external S3"
+run = ". ./.envrc && docker compose -f compose.prototype.yaml up -d --build --wait"
+
+[tasks.prototype-down]
+description = "Stop the prototype without deleting its database"
+run = ". ./.envrc && docker compose -f compose.prototype.yaml down"

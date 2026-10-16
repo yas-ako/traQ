@@ -51,6 +51,8 @@ type Config struct {
 
 	// AllowSignUp ユーザーが自分自身で登録できるかどうか（default: false）
 	AllowSignUp bool `mapstructure:"allowSignUp" yaml:"allowSignUp"`
+	// InitialAdminPassword 初回DB初期化時だけ使用する管理者パスワード。
+	InitialAdminPassword string `mapstructure:"initialAdminPassword" yaml:"initialAdminPassword"`
 
 	// AccessLog HTTPアクセスログ設定
 	AccessLog struct {

@@ -1,0 +1,18 @@
+# Copy to .envrc, fill in secrets, then source .envrc (or use direnv).
+# These variables must be passed explicitly to Docker / NeoShowcase.
+export TRAQ_STORAGE_TYPE='s3'
+export TRAQ_STORAGE_S3_ENDPOINT='https://api.s3-dev.trap.jp/'
+export TRAQ_STORAGE_S3_REGION='us-east-1'
+export TRAQ_STORAGE_S3_BUCKET='your-prototype-bucket'
+export TRAQ_STORAGE_S3_ACCESSKEY='replace-me'
+export TRAQ_STORAGE_S3_SECRETKEY='replace-me'
+export TRAQ_STORAGE_S3_FORCEPATHSTYLE='true'
+# Used only when initializing a new database, not to reset an existing user.
+export TRAQ_INITIALADMINPASSWORD='replace-with-a-random-password'
+# Local Compose only. Do not copy this to NeoShowcase.
+export PROTOTYPE_DB_PASSWORD='replace-with-another-random-password'
+# Local smoke test accounts (ordinary users, not administrators).
+export PROTOTYPE_DEMO01_PASSWORD='replace-with-demo01-random-password'
+export PROTOTYPE_DEMO02_PASSWORD='replace-with-demo02-random-password'
+export PROTOTYPE_DEMO03_PASSWORD='replace-with-demo03-random-password'
+export PROTOTYPE_DEMO04_PASSWORD='replace-with-demo04-random-password'
